@@ -1,0 +1,21 @@
+{
+    "name": "yuptogun/dootong",
+    "description": "A simple abstract dynamic pseudo-DTO model for PHP DDD",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Eojin Kim",
+            "email": "eojin1211@hanmail.net"
+        }
+    ],
+    "require-dev": {
+        "phpunit/phpunit": "^9.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Yuptogun\\Dootong\\": "src/",
+            "Tests\\": "test/"
+        }
+    }
+}
