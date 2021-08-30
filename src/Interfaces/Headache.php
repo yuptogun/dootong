@@ -14,7 +14,7 @@ interface Headache
      * @param mixed $source
      * @return self[]
      */
-    public static function get($source): array;
+    public function get($source): array;
 
     /**
      * Registers into repository
@@ -24,5 +24,9 @@ interface Headache
      * @return self
      * @throws Throwable
      */
-    public static function set($source, array $entry): self;
+    public function set($source, array $entry): self;
+
+    public function castAttributes(): void;
+    public function getPublicAttributes(): array;
+    public function checkRequiredAttributes(): bool;
 }

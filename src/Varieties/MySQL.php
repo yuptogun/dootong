@@ -10,20 +10,27 @@ class MySQL extends Dootong
 {
     /**
      * @param PDOStatement $source
-     * @return array
+     * @return self[]
      */
-    public static function get($source): array
+    public function get($source): array
     {
-        return $source->fetchAll(PDO::FETCH_CLASS, self::class);
+        return $source->fetchAll(PDO::FETCH_CLASS, static::class);
     }
 
     /**
      * @param PDOStatement $source
-     * @param array $entry
+     * @param self $entry
      */
-    public static function set($source, array $entry): Headache
+    public function set($source, array $entry): Headache
     {
-        fore
-        $source->bindValue()
+        foreach ($entry as $param => $value) {
+            $source->bindValue($param, $value);
+        }
+        $source->execute();
+        $dootong = clone $this;
+        foreach ($entry as $name => $value) {
+            $dootong->setAttribute($name, $value);
+        }
+        return $dootong;
     }
 }

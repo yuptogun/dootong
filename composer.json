@@ -15,7 +15,10 @@
     "autoload": {
         "psr-4": {
             "Yuptogun\\Dootong\\": "src/",
-            "Tests\\": "test/"
+            "Tests\\": "tests/"
         }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit tests"
     }
 }
