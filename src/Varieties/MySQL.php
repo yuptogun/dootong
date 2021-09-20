@@ -14,7 +14,15 @@ class MySQL extends Dootong
      */
     public function get($source): array
     {
-        return $source->fetchAll(PDO::FETCH_CLASS, static::class);
+        /** @var self[] $dootongs */
+        $dootongs = $source->fetchAll(PDO::FETCH_CLASS, static::class);
+
+        return !$this->isSoftDeletable()
+            ? $dootongs
+            : array_filter($dootongs, function ($dootong) {
+                /** @var self $dootong */
+                return !$dootong->isSoftDeleted();
+            });
     }
 
     /**

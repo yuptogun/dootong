@@ -49,6 +49,13 @@ class UserDTO extends Dootong
         'pwd' => 'password', // password type fillable hidden by default
         'id' => 'increment',
     ];
+
+    /**
+     * set the timestamp column name if you want to enable "soft delete"
+     * @required false
+     * @default 'deleted_at'
+     */
+    protected $deletedAt = 'deleted_at';
 }
 ```
 
