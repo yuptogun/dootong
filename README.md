@@ -13,44 +13,64 @@ Every `Yuptogun\Dootong\Interfaces\Headache` implementation looks like the follo
 ```php
 use Yuptogun\Dootong\Varieties\MySQL as Dootong;
 
-class UserModel extends Dootong
+class UserDTO extends Dootong
 {
-    // required
-    private $fillable = [
+    /**
+     * attributes to get
+     * @required true
+     */
+    protected $fillable = [
         'email', 'username', 'id', 'bio', 'timezone',
     ];
 
-    // optional
-    private $required = [
+    /**
+     * required attributes to set
+     * @required false
+     */
+    protected $required = [
         'email', 'username', 'pwd',
     ];
 
-    // optional
-    private $hidden = [
+    /**
+     * attributes to hide when getting them
+     * @required false
+     */
+    protected $hidden = [
         'email', 'timezone',
     ];
 
-    // optional
-    private $casts = [
+    /**
+     * attribute type casting definitions
+     * @required false
+     */
+    protected $casts = [
         'username' => 'string',
         'email' => 'email',
         'pwd' => 'password', // password type fillable hidden by default
         'id' => 'increment',
     ];
+
+    /**
+     * set the timestamp column name if you want to enable "soft delete"
+     * @required false
+     * @default 'deleted_at'
+     */
+    protected $deletedAt = 'deleted_at';
 }
 ```
 
-### `get()`
+### `get(): Headache[]`
 
-Fetches from the provided repository.
+Fetches *many* from the provided repository.
 
 ```php
-$userModel = new UserModel;
+$dto = new UserDTO;
+$query = "SELECT * FROM users";
 
 /** @var \PDO $pdo */
-$statement = $pdo->query("SELECT * FROM users");
+$statement = $pdo->query($query);
+$users     = $dto->get($statement);
 
-$users = UserModel::get($statement);
 foreach ($users as $user) {
     if ($user->pwd) {
         throw new \Exception('this never happens: see fillable');
@@ -61,22 +81,26 @@ foreach ($users as $user) {
 }
 ```
 
-### `set()`
+### `set(): Headache`
 
-Registers the entity into the provided repository.
+Registers *one* entity into the provided repository.
 
 ```php
+$dto = new UserDTO;
+$query =
+"INSERT INTO users (username, email, pwd, bio)
+VALUES (:username, :email, :pwd, :bio)";
 $inputs = [
     'username' => 'Foo B.',
-    'email' => 'foo@bar.com',
-    'pwd' => '12345678',
-    'bio' => '',
+    'email'    => 'foo@bar.com',
+    'pwd'      => '12345678',
+    'bio'      => '',
 ];
 
 /** @var \PDO $pdo */
-$statement = $pdo->query("INSERT INTO users (username, email, pwd, bio) VALUES (:username, :email, :pwd, :bio)");
+$statement = $pdo->query($query);
+$newUser   = $dto->set($statement, $inputs);
 
-$newUser = UserModel::set($statement, $inputs);
 if ($newUser->pwd) {
     throw new \Exception('this never happens');
 }
@@ -88,7 +112,7 @@ unset($inputs['password'], $inputs['bio']);
 $inputs['email'] = 'bar.com';
 
 try {
-    $newUser = UserModel::set($statement, $inputs);
+    $newUser = $dto->set($statement, $inputs);
     echo "this never prints";
 } catch (\Exception $e) {
     echo "this always prints: see required";
@@ -98,22 +122,9 @@ try {
 
 ## Expectedly Asked Questions
 
-### Q. But this is not a DTO is it?
-
-No it is not a DTO, but not a non-DTO.
-
-* It is a model.
-* Its methods maintains/validates its properties, keeping its number to the least.
-
 ### Q. Why not just pure DTO with other ORMs or anything?
 
 I don't buy the idea entirely.
 
 * "A class with no methods" itself is a joke to me. Why not JSON then?
 * The properties MUST have some attributes and characteristics; DTO in theory never resolves that requirements.
-
-### Q. Why `PDOStatement`?
-
-Because it is a PDO Dootong I suppose?
-
-* I don't know what queries you would like to execute to get that data objects. So be it on your own! Will just map up into `Dootong[]` or `Dootong` instance(s).
