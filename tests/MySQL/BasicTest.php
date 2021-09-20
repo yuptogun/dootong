@@ -1,36 +1,60 @@
 <?php
+declare(strict_types=1);
+
 namespace Tests\MySQL;
 
-use PDO;
-use PHPUnit\Framework\TestCase;
+use Tests\MySQL as MySQLTest;
 use Yuptogun\Dootong\Varieties\MySQL as Dootong;
 
-class Bizunit extends Dootong
+class User extends Dootong
 {
     protected $fillable = [
-        'bizunit_sno', 'bizunit_id', 'bizunit_name',
+        'id', 'email', 'name', 'password', 'created_at',
     ];
     protected $casts = [
-        'bizunit_sno' => 'increment',
+        'id' => 'increment',
+        'password' => 'password',
+        'created_at' => 'datetime',
     ];
+    protected $deletedAt = 'deleted_at';
 }
 
-final class BasicTest extends TestCase
+final class BasicTest extends MySQLTest
 {
-    public function testGet()
+    public function testCanGetUsers(): void
     {
-        $pdo = new PDO('mysql:host=3.34.53.113;port=33307;charset=utf8', 'admin', 'Tldzmgkgk12!');
-        $source = $pdo->query(
-            "SELECT *
-            FROM synctree_studio.bizunit b
-            ORDER BY b.bizunit_sno DESC
-            LIMIT 1"
-        );
-
-        $model = new Bizunit;
-        $bizunit = $model->get($source);
-        foreach ($bizunit as $b) {
-            $this->assertIsInt($b->bizunit_sno);
+        foreach ($this->getAllUsers() as $user) {
+            /** @var User $user */
+            $this->assertIsInt($user->id);
+            $this->assertNotEmpty($user->email);
+            $this->assertIsObject($user->created_at);
+            $this->assertIsString($user->created_at->format('Y-m-d H:i:s'));
+            $this->assertObjectNotHasAttribute('password', $user);
+            $this->assertNull($user->deleted_at);
         }
+    }
+
+    public function testCanGetAllUsers(): void
+    {
+        foreach ($this->getAllUsers(true) as $user) {
+            /** @var Dootong $user */
+            if ($user->isSoftDeleted()) {
+                $this->assertIsString($user->deleted_at->format('Y-m-d H:i:s'));
+            } else {
+                $this->assertNull($user->deleted_at);
+            }
+        }
+    }
+
+    /**
+     * @return User[]
+     */
+    private function getAllUsers(bool $withTrashed = false): array
+    {
+        $model = new User;
+        $source = $this->getPDO()->query("SELECT * FROM users");
+        return $withTrashed
+            ? $model->withTrashed()->get($source)
+            : $model->get($source);
     }
 }
