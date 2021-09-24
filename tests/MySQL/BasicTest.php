@@ -51,8 +51,8 @@ final class BasicTest extends MySQLTest
      */
     private function getAllUsers(bool $withTrashed = false): array
     {
-        $model = new User;
-        $source = $this->getPDO()->query("SELECT * FROM users");
+        $model = new User($this->getPDO());
+        $source = "SELECT * FROM users";
         return $withTrashed
             ? $model->withTrashed()->get($source)
             : $model->get($source);

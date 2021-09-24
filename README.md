@@ -46,8 +46,8 @@ class UserDTO extends Dootong
     protected $casts = [
         'username' => 'string',
         'email' => 'email',
-        'pwd' => 'password', // password type fillable hidden by default
-        'id' => 'increment',
+        'pwd' => 'password', // "password" type fillable hidden by default
+        'id' => 'increment', // "increment" type is automatically integer
     ];
 
     /**
@@ -63,12 +63,9 @@ class UserDTO extends Dootong
 Fetches *many* from the provided repository.
 
 ```php
-$dto = new UserDTO;
-$query = "SELECT * FROM users";
-
 /** @var \PDO $pdo */
-$statement = $pdo->query($query);
-$users     = $dto->get($statement);
+$dto = new UserDTO($pdo);
+$users = $dto->get("SELECT * FROM users");
 
 foreach ($users as $user) {
     if ($user->pwd) {
@@ -85,7 +82,6 @@ foreach ($users as $user) {
 Registers *one* entity into the provided repository.
 
 ```php
-$dto = new UserDTO;
 $query =
 "INSERT INTO users (username, email, pwd, bio)
 VALUES (:username, :email, :pwd, :bio)";
@@ -97,9 +93,9 @@ $inputs = [
 ];
 
 /** @var \PDO $pdo */
-$statement = $pdo->query($query);
-$newUser   = $dto->set($statement, $inputs);
-
+$dto = new UserDTO($pdo);
+$newUserID = $dto->set($query, $inputs);
+$newUser   = $dto->get("SELECT * FROM users WHERE id = :newUserID", compact('newUserID'))[0];
 if ($newUser->pwd) {
     throw new \Exception('this never happens');
 }
@@ -111,7 +107,7 @@ unset($inputs['password'], $inputs['bio']);
 $inputs['email'] = 'bar.com';
 
 try {
-    $newUser = $dto->set($statement, $inputs);
+    $newUserID = $dto->set($query, $inputs);
     echo "this never prints";
 } catch (\Exception $e) {
     echo "this always prints: see required";
@@ -202,8 +198,7 @@ class UserPurchase extends \Yuptogun\Dootong\Varieties\MySQL {
     $fillable = ['a_id', 'a_name', 'bc_name'];
     $casts = ['a_id' => 'increment'];
 }
-$source = $pdo->query($query);
-$userPurchases = (new UserPurchase)->get($source);
+$userPurchases = (new UserPurchase($pdo))->get($query);
 ```
 
 ## Expectedly Asked Questions
