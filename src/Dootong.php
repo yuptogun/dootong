@@ -127,6 +127,8 @@ abstract class Dootong implements JsonSerializable, Headache
                 return (bool) $value;
             case 'date': case 'datetime': case 'timestamp':
                 return empty($value) ? null : new DateTime($value);
+            case 'password':
+                return password_hash($value, PASSWORD_DEFAULT);
             case 'string':
             default:
                 return (string) $value;
