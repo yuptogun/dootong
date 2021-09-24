@@ -97,6 +97,16 @@ abstract class Dootong implements JsonSerializable, Headache
         return !empty($this->getDeletedAtName());
     }
 
+    protected function hasIncrementingKey(): bool
+    {
+        foreach (array_values($this->getAttributeCastings()) as $cast) {
+            if ($cast === 'increment') {
+                return true;
+            }
+        }
+        return false;
+    }
+
     protected function getCasting(string $name): string
     {
         foreach ($this->getAttributeCastings() as $attr => $cast) {
