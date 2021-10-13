@@ -77,7 +77,7 @@ foreach ($users as $user) {
 }
 ```
 
-### `set(): Headache`
+### `set(): int`
 
 Registers *one* entity into the provided repository.
 
@@ -141,7 +141,7 @@ AND bc.bc_name LIKE '%subscription%'
 GROUP BY a.a_id, bc.bc_id;
 ```
 
-In Theoretical ORM usages you start by analyzing the given query and converting into a lot of entities and definitions.
+In Theoretical ORM usages you start by analyzing the given query and converting into a lot of entities and their relationships.
 
 ```php
 class User extends Model {
@@ -167,9 +167,9 @@ $userPurchases = User::where(function ($q) {
     })->where(/*  ... */)->get(); // ERROR! still a lot to do
 ```
 
-This is because that's the way the ORMs work with data. It premises that tables and columns have inherent and essential relationships. Therefore, the more the way of fetching data is complicated, the more the constraints, so the less you can do with them.
+This is because that's the way the ORMs work with data. It premises that tables and columns have inherent and essential relationships. As a result, the more the way of fetching data is complicated, the more the constraints, the less you can do with them.
 
-`Dootong` is a trade-off to that. It does nothing else than `get()` and `set()`, but it works as long as there is data to iterate.
+`Dootong` is a trade-off to that. It never assumes any relationships, indexing rules or whatsoever. It just `get()` and `set()` the data according to its variety and cause.
 
 ```php
 // take this joke for example
@@ -185,7 +185,7 @@ class User extends \Yuptogun\Dootong\Varieties\StaticArray {
 $users = (new User)->get($userArray);
 ```
 
-ORMs are great but too great sometimes, when all you want to do is entity-level jobs like validating input values, filtering soft-deleted rows and/or casting attribute types. In that case, doing it ORM style could be an overkill.
+ORMs are great, but when all you want to do is entity-level jobs like validating input values, filtering soft-deleted rows and/or casting attribute types, doing it with ORMs could be an overkill.
 
 After all, sooner or later, we all should deal with heavy queries and/or raw data anyway. It is the real problem that would cause a headache, which `Dootong` is to resolve.
 
@@ -224,6 +224,6 @@ If you have a soulution, please make a pull request and let us see.
 
 I suppose not. If you can write one for yourself, please consider a contribution.
 
-### Q. "`Dootong\Variety\Foo` extending `Headache`"? You serious? No plan to rename the package name or namespaces?
+### Q. "`Dootong\Variety\Foo` type `Headache` caused by `$cause`"? You serious? No plan to rename the package name or namespaces?
 
 Unless you come up with better DTO jokes.

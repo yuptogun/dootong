@@ -11,21 +11,21 @@ interface Headache
     /**
      * Fetches from repository
      *
-     * @param mixed $source
+     * @param mixed $cause
      * @param array|null $params
      * @return self[]
      */
-    public function get($source, ?array $params = null): array;
+    public function get($cause, ?array $params = null): array;
 
     /**
      * Registers into repository
      *
-     * @param mixed $source
-     * @param array $entry
+     * @param mixed $cause
+     * @param array $params
      * @return int affected rows count or last insert id
      * @throws Throwable
      */
-    public function set($source, array $entry): int;
+    public function set($cause, array $params): int;
 
     public function castAttributes(): void;
     public function getPublicAttributes(): array;

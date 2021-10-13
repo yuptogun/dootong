@@ -15,11 +15,11 @@ class MySQL extends Dootong
     }
 
     /**
-     * @param string $source query string that eventually SELECT
+     * @param string $cause MySQL query string that eventually SELECT
      */
-    public function get($source, ?array $params = null): array
+    public function get($cause, ?array $params = null): array
     {
-        $query = $this->executeQuery($source, $params);
+        $query = $this->executeQuery($cause, $params);
 
         /** @var self[] $dootongs */
         $dootongs = $query->fetchAll(PDO::FETCH_CLASS, static::class, [$this->pdo]);
@@ -33,31 +33,31 @@ class MySQL extends Dootong
     }
 
     /**
-     * @param string $source query string that eventually UPDATE, INSERT or DELETE
+     * @param string $cause MySQL query string that eventually UPDATE, INSERT or DELETE
      */
-    public function set($source, array $entry): int
+    public function set($cause, array $params): int
     {
-        $query = $this->executeQuery($source, $entry);
+        $query = $this->executeQuery($cause, $params);
 
-        $isInsert = (bool) preg_match('/INSERT\s+INTO\s+/', $source);
+        $isInsert = (bool) preg_match('/INSERT\s+INTO\s+/i', $cause);
         $hasIncrementingKey = $this->hasIncrementingKey();
         return $isInsert && $hasIncrementingKey ? (int) $this->pdo->lastInsertId() : $query->rowCount();
     }
 
-    protected function executeQuery(string $source, ?array $params = null): PDOStatement
+    protected function executeQuery(string $query, ?array $params = null): PDOStatement
     {
-        $query = $this->prepareQuery($source, $params);
+        $query = $this->prepareQuery($query, $params);
         $query->execute();
         return $query;
     }
 
-    protected function prepareQuery(string $source, ?array $params = null): PDOStatement
+    protected function prepareQuery(string $query, ?array $params = null): PDOStatement
     {
-        $query = $this->pdo->prepare($source);
+        $query = $this->pdo->prepare($query);
         if (!empty($params)) {
             foreach ($params as $key => $value) {
                 $param = ":$key";
-                if (strpos($source, $param) !== FALSE) {
+                if (strpos($query, $param) !== FALSE) {
                     $query->bindParam($param, $this->getCastedValue($value, $this->getCasting($key)), $this->getParamType($key));
                 }
             }
