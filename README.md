@@ -11,9 +11,7 @@ A simple abstact dynamic pseudo-DTO ***model*** for PHP DDD.
 Every `Yuptogun\Dootong\Interfaces\Headache` implementation looks like the following.
 
 ```php
-use Yuptogun\Dootong\Varieties\MySQL as Dootong;
-
-class User extends Dootong
+class User extends Yuptogun\Dootong\Dootong
 {
     /**
      * attributes to get
