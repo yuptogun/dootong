@@ -2,10 +2,12 @@
 namespace Yuptogun\Dootong;
 
 use DateTime;
+use Exception;
 use JsonSerializable;
+use Yuptogun\Dootong\Interfaces\Variety;
 use Yuptogun\Dootong\Interfaces\Headache;
 
-abstract class Dootong implements JsonSerializable, Headache
+class Dootong implements JsonSerializable, Headache
 {
     protected $fillable = [];
     protected $required = [];
@@ -24,102 +26,62 @@ abstract class Dootong implements JsonSerializable, Headache
      */
     private $attributes = [];
 
-    public function getFillableAttributes(): array
+    /**
+     * what kind of `Headache` is it?
+     *
+     * @var Variety
+     */
+    private $variety;
+
+    // ---- JsonSerializable implementation ---- //
+
+    public function jsonSerialize(): array
     {
-        $fillables = $this->fillable;
-        if ($this->isSoftDeletable()) {
-            $fillables[] = $this->getDeletedAtName();
-        }
-        return $fillables;
+        return $this->getPublicAttributes();
     }
 
-    public function getRequiredAttributes(): array
-    {
-        return $this->required;
-    }
+    // ---- Headache implementation ---- //
 
-    public function getHiddenAttributes(): array
+    public function __construct(?Variety $variety = null)
     {
-        return $this->hidden;
-    }
-
-    public function getAttributeCastings(): array
-    {
-        $casts = $this->casts;
-        if ($this->isSoftDeletable()) {
-            $casts[$this->getDeletedAtName()] = 'datetime';
-        }
-        return $casts;
-    }
-
-    public function getDeletedAtName(): ?string
-    {
-        return $this->deletedAt;
-    }
-
-    protected function getAttributes(): array
-    {
-        return $this->attributes;
-    }
-
-    protected function getAttribute(string $name)
-    {
-        if ($this->isAttributeHidden($name)) {
-            return null;
-        }
-        return $this->getAttributes()[$name] ?? null;
-    }
-
-    protected function setAttribute(string $name, $value)
-    {
-        if ($this->isAttributeFillable($name)) {
-            $this->attributes[$name] = $this->getCastedValue($value, $this->getCasting($name));
+        if ($variety) {
+            $this->setVariety($variety);
         }
     }
 
-    protected function isAttributeFillable(string $name): bool
+    public static function suffer(Variety $variety): Headache
     {
-        return in_array($name, $this->getFillableAttributes());
+        $dootong = new static;
+        $dootong->setVariety($variety);
+        return $dootong;
     }
 
-    protected function isAttributeRequired(string $name): bool
+    public function get($cause, ?array $attrs = null): array
     {
-        return in_array($name, $this->getRequiredAttributes());
+        return $this->getVariety()->get($this, $cause, $attrs);
     }
 
-    protected function isAttributeHidden(string $name): bool
+    public function set($cause, array $attrs): int
     {
-        return in_array($name, $this->getHiddenAttributes());
+        return $this->getVariety()->set($this, $cause, $attrs);
     }
 
-    protected function isSoftDeletable(): bool
+    public function getVariety(): Variety
     {
-        return !empty($this->getDeletedAtName());
-    }
-
-    protected function hasIncrementingKey(): bool
-    {
-        foreach (array_values($this->getAttributeCastings()) as $cast) {
-            if ($cast === 'increment') {
-                return true;
-            }
+        if (!$this->variety) {
+            throw new Exception(get_called_class()." Dootong is unknown of its Variety! Must suffer() from one first.");
         }
-        return false;
+        return $this->variety;
     }
 
-    protected function getCasting(string $name): string
+    public function setVariety(Variety $variety): void
     {
-        foreach ($this->getAttributeCastings() as $attr => $cast) {
-            if ($name === $attr) {
-                return $cast;
-            }
-        }
-        return 'string';
+        $this->variety = $variety;
     }
 
-    protected function getCastedValue($value, $type = 'string')
+    public function getCastedValue(string $attr, $value)
     {
-        $type = strtolower($type);
+        $type = $this->getCasting($attr);
         switch ($type) {
             case 'int': case 'integer': case 'increment':
                 return (int) $value;
@@ -135,14 +97,43 @@ abstract class Dootong implements JsonSerializable, Headache
         }
     }
 
-    protected function setCastedValue($attr, $type)
+    public function getCasting(string $attr): string
     {
-        if ($type === 'increment') {
-            unset($this->{$attr});
-        } else {
-            $this->setAttribute($attr, $this->getAttribute($attr));
+        foreach ($this->getAttributeCastings() as $attribute => $cast) {
+            if ($attr === $attribute) {
+                return strtolower($cast);
+            }
         }
+        return 'string';
     }
+
+    public function hasIncrementingKey(): bool
+    {
+        foreach (array_values($this->getAttributeCastings()) as $cast) {
+            if ($cast === 'increment') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function isSoftDeletable(): bool
+    {
+        return !empty($this->getDeletedAtName());
+    }
+
+    public function isSoftDeleted(): bool
+    {
+        return $this->isSoftDeletable() && !empty($this->getAttribute($this->getDeletedAtName()));
+    }
+
+    public function withTrashed(): Headache
+    {
+        $this->deletedAt = null;
+        return $this;
+    }
+
+    // ---- functions of abstract class Dootong ---- //
 
     public function __set(string $name, $value): void
     {
@@ -166,19 +157,91 @@ abstract class Dootong implements JsonSerializable, Headache
         $this->attributes = $attrs;
     }
 
-    public function jsonSerialize(): array
+    protected function setAttribute(string $name, $value)
     {
-        return $this->getPublicAttributes();
+        if ($this->isAttributeFillable($name)) {
+            $this->attributes[$name] = $this->getCastedValue($name, $value);
+        }
     }
 
-    public function castAttributes(): void
+    protected function getAttribute(string $name)
+    {
+        if ($this->isAttributeHidden($name)) {
+            return null;
+        }
+        return $this->getAttributes()[$name] ?? null;
+    }
+
+    protected function isAttributeFillable(string $name): bool
+    {
+        return in_array($name, $this->getFillableAttributes());
+    }
+
+    protected function isAttributeHidden(string $name): bool
+    {
+        return in_array($name, $this->getHiddenAttributes());
+    }
+
+    protected function getFillableAttributes(): array
+    {
+        $fillables = $this->fillable;
+        if ($this->isSoftDeletable()) {
+            $fillables[] = $this->getDeletedAtName();
+        }
+        return $fillables;
+    }
+
+    protected function getHiddenAttributes(): array
+    {
+        return $this->hidden;
+    }
+
+    protected function getDeletedAtName(): ?string
+    {
+        return $this->deletedAt;
+    }
+
+    protected function getAttributes(): array
+    {
+        return $this->attributes;
+    }
+
+    protected function isAttributeRequired(string $name): bool
+    {
+        return in_array($name, $this->getRequiredAttributes());
+    }
+
+    protected function getRequiredAttributes(): array
+    {
+        return $this->required;
+    }
+
+    protected function castAttributes(): void
     {
         foreach ($this->getAttributeCastings() as $attr => $type) {
             $this->setCastedValue($attr, $type);
         }
     }
 
-    public function getPublicAttributes(): array
+    protected function getAttributeCastings(): array
+    {
+        $casts = $this->casts;
+        if ($this->isSoftDeletable()) {
+            $casts[$this->getDeletedAtName()] = 'datetime';
+        }
+        return $casts;
+    }
+
+    protected function setCastedValue($attr, $type)
+    {
+        if ($type === 'increment') {
+            unset($this->{$attr});
+        } else {
+            $this->setAttribute($attr, $this->getAttribute($attr));
+        }
+    }
+
+    protected function getPublicAttributes(): array
     {
         return array_filter($this->attributes, function ($attr) {
             return !in_array($this->getCasting($attr), ['password'])
@@ -186,7 +249,7 @@ abstract class Dootong implements JsonSerializable, Headache
         }, ARRAY_FILTER_USE_KEY);
     }
 
-    public function checkRequiredAttributes(): bool
+    protected function checkRequiredAttributes(): bool
     {
         foreach ($this->getRequiredAttributes() as $attr) {
             if (!$this->{$attr}) {
@@ -194,16 +257,5 @@ abstract class Dootong implements JsonSerializable, Headache
             }
         }
         return true;
-    }
-
-    public function isSoftDeleted(): bool
-    {
-        return $this->isSoftDeletable() && !empty($this->getAttribute($this->getDeletedAtName()));
-    }
-
-    public function withTrashed(): self
-    {
-        $this->deletedAt = null;
-        return $this;
     }
 }
