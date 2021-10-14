@@ -3,8 +3,10 @@ declare(strict_types=1);
 
 namespace Tests\MySQL;
 
+use Exception;
 use Tests\MySQL as MySQLTest;
-use Yuptogun\Dootong\Varieties\MySQL as Dootong;
+use Yuptogun\Dootong\Dootong;
+use Yuptogun\Dootong\Varieties\MySQL;
 
 class User extends Dootong
 {
@@ -21,6 +23,22 @@ class User extends Dootong
 
 final class BasicTest extends MySQLTest
 {
+    public function testWrongDootong(): void
+    {
+        $this->expectException(Exception::class);
+        $wrongDootong = new User;
+        $wrongDootong->get("SELECT * FROM users");
+    }
+
+    public function testCorrectDootong(): void
+    {
+        $correctDootong1 = new User(new MySQL($this->getPDO()));
+        $correctDootong2 = User::suffer(new MySQL($this->getPDO()));
+
+        $this->assertInstanceOf(User::class, $correctDootong1);
+        $this->assertInstanceOf(User::class, $correctDootong2);
+    }
+
     public function testCanGetUsers(): void
     {
         foreach ($this->getAllUsers() as $user) {
@@ -51,10 +69,10 @@ final class BasicTest extends MySQLTest
      */
     private function getAllUsers(bool $withTrashed = false): array
     {
-        $model = new User($this->getPDO());
-        $source = "SELECT * FROM users";
+        $dootong = User::suffer(new MySQL($this->getPDO()));
+        $cause = "SELECT * FROM users";
         return $withTrashed
-            ? $model->withTrashed()->get($source)
-            : $model->get($source);
+            ? $dootong->withTrashed()->get($cause)
+            : $dootong->get($cause);
     }
 }

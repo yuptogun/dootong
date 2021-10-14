@@ -4,12 +4,23 @@ namespace Yuptogun\Dootong\Varieties;
 use PDO;
 use PDOStatement;
 use Yuptogun\Dootong\Dootong;
+use Yuptogun\Dootong\Interfaces\Variety as DootongVariety;
 
-class MySQL extends Dootong
+class MySQL implements DootongVariety
 {
+    /**
+     * @var Dootong
+     */
+    private $dootong;
+
     private $pdo;
 
-    public function __construct(PDO $pdo)
+    // ---- Variety implementation ---- //
+
+    /**
+     * @param PDO $pdo
+     */
+    public function __construct($pdo)
     {
         $this->pdo = $pdo;
     }
@@ -17,17 +28,18 @@ class MySQL extends Dootong
     /**
      * @param string $cause MySQL query string that eventually SELECT
      */
-    public function get($cause, ?array $params = null): array
+    public function get(Dootong $dootong, $cause, ?array $params = null): array
     {
+        $this->setDootong($dootong);
         $query = $this->executeQuery($cause, $params);
 
-        /** @var self[] $dootongs */
-        $dootongs = $query->fetchAll(PDO::FETCH_CLASS, static::class, [$this->pdo]);
+        /** @var Headache[] $dootongs */
+        $dootongs = $query->fetchAll(PDO::FETCH_CLASS, get_class($this->getDootong()), [$this->getDootong()->getVariety()]);
 
-        return !$this->isSoftDeletable()
+        return !$this->getDootong()->isSoftDeletable()
             ? $dootongs
             : array_filter($dootongs, function ($dootong) {
-                /** @var self $dootong */
+                /** @var Headache $dootong */
                 return !$dootong->isSoftDeleted();
             });
     }
@@ -35,39 +47,52 @@ class MySQL extends Dootong
     /**
      * @param string $cause MySQL query string that eventually UPDATE, INSERT or DELETE
      */
-    public function set($cause, array $params): int
+    public function set(Dootong $dootong, $cause, array $params): int
     {
+        $this->setDootong($dootong);
         $query = $this->executeQuery($cause, $params);
 
         $isInsert = (bool) preg_match('/INSERT\s+INTO\s+/i', $cause);
-        $hasIncrementingKey = $this->hasIncrementingKey();
+        $hasIncrementingKey = $this->getDootong()->hasIncrementingKey();
         return $isInsert && $hasIncrementingKey ? (int) $this->pdo->lastInsertId() : $query->rowCount();
     }
 
-    protected function executeQuery(string $query, ?array $params = null): PDOStatement
+    public function getDootong(): Dootong
+    {
+        return clone $this->dootong;
+    }
+
+    public function setDootong(Dootong $dootong): void
+    {
+        $this->dootong = $dootong;
+    }
+
+    // ---- Variety implementation ---- //
+
+    private function executeQuery(string $query, ?array $params = null): PDOStatement
     {
         $query = $this->prepareQuery($query, $params);
         $query->execute();
         return $query;
     }
 
-    protected function prepareQuery(string $query, ?array $params = null): PDOStatement
+    private function prepareQuery(string $query, ?array $params = null): PDOStatement
     {
         $query = $this->pdo->prepare($query);
         if (!empty($params)) {
             foreach ($params as $key => $value) {
                 $param = ":$key";
                 if (strpos($query, $param) !== FALSE) {
-                    $query->bindParam($param, $this->getCastedValue($value, $this->getCasting($key)), $this->getParamType($key));
+                    $query->bindParam($param, $this->getDootong()->getCastedValue($key, $value), $this->getParamType($key));
                 }
             }
         }
         return $query;
     }
 
-    protected function getParamType(string $name): int
+    private function getParamType(string $key): int
     {
-        switch ($this->getCasting($name)) {
+        switch ($this->getDootong()->getCasting($key)) {
             case 'int': case 'integer': case 'increment':
                 return PDO::PARAM_INT;
             case 'string':
