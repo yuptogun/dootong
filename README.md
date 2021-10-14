@@ -13,7 +13,7 @@ Every `Yuptogun\Dootong\Interfaces\Headache` implementation looks like the follo
 ```php
 use Yuptogun\Dootong\Varieties\MySQL as Dootong;
 
-class UserDTO extends Dootong
+class User extends Dootong
 {
     /**
      * attributes to get
@@ -58,13 +58,33 @@ class UserDTO extends Dootong
 }
 ```
 
+### `suffer(): Headache`
+
+Set a variety (i.e. type) of the headache.
+
+You define your `Dootong` once and get/set data from a variety of repositories.
+
+```php
+use Yuptogun\Dootong\Varieties\MySQL;
+use Yuptogun\Dootong\Varieties\Redis; // tbd
+
+$userFromMySQL = User::suffer(new MySQL($pdo));
+$userFromRedis = User::suffer(new Redis($redis));
+
+$DBUsers = $userFromMySQL->get('SELECT * FROM users');
+$RedisUsers = $userFromRedis->get('user:*');
+if ($DBUsers !== $RedisUsers) {
+    echo "this can and should happen";
+}
+```
+
 ### `get(): Headache[]`
 
 Fetches *many* from the provided repository.
 
 ```php
 /** @var \PDO $pdo */
-$dto = new UserDTO($pdo);
+$dto = User::suffer(new MySQL($pdo));
 $users = $dto->get("SELECT * FROM users");
 
 foreach ($users as $user) {
@@ -93,7 +113,7 @@ $inputs = [
 ];
 
 /** @var \PDO $pdo */
-$dto = new UserDTO($pdo);
+$dto = User::suffer(new MySQL($pdo));
 $newUserID = $dto->set($query, $inputs);
 $newUser   = $dto->get("SELECT * FROM users WHERE id = :newUserID", compact('newUserID'))[0];
 if ($newUser->pwd) {
@@ -179,10 +199,10 @@ class UserModel extends \Illuminate\Database\Eloquent\Model {
 $userArray = UserModel::whereDoesntHave('subs')->get();
 
 // $userArray alone works 100%, but you can still use Dootong
-class User extends \Yuptogun\Dootong\Varieties\StaticArray {
+class User extends \Yuptogun\Dootong\Dootong {
     protected $fillable = ['name', 'age'];
 }
-$users = (new User)->get($userArray);
+$users = User::suffer(new StaticArray($userArray));
 ```
 
 ORMs are great, but when all you want to do is entity-level jobs like validating input values, filtering soft-deleted rows and/or casting attribute types, doing it with ORMs could be an overkill.
@@ -194,11 +214,11 @@ After all, sooner or later, we all should deal with heavy queries and/or raw dat
 $query = "SELECT a.a_id ... GROUP BY a.a_id, bc.bc_id";
 
 // ... that lets you focus on final selects
-class UserPurchase extends \Yuptogun\Dootong\Varieties\MySQL {
+class UserPurchase extends \Yuptogun\Dootong\Dootong {
     $fillable = ['a_id', 'a_name', 'bc_name'];
     $casts = ['a_id' => 'increment'];
 }
-$userPurchases = (new UserPurchase($pdo))->get($query);
+$userPurchases = UserPurchase::suffer(new MySQL($pdo))->get($query);
 ```
 
 ## Expectedly Asked Questions
