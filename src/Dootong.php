@@ -70,14 +70,20 @@ class Dootong implements JsonSerializable, Headache
         return $dootong;
     }
 
-    public function get($cause, ?array $attrs = null): array
+    public function get(?array $attrs = null, $cause = null): array
     {
-        return $this->getVariety()->get($this, $cause, $attrs);
+        if ($cause !== null) {
+            $this->setHeadacheGettingCause($cause);
+        }
+        return $this->getVariety()->get($this, $attrs);
     }
 
-    public function set($cause, array $attrs): int
+    public function set(array $attrs, $cause = null): int
     {
-        return $this->getVariety()->set($this, $cause, $attrs);
+        if ($cause !== null) {
+            $this->setHeadacheSettingCause($cause);
+        }
+        return $this->getVariety()->set($this, $attrs);
     }
 
     public function setHeadacheGettingCause($cause): Headache

@@ -26,22 +26,23 @@ interface Headache
     /**
      * get from repository, according to "variety"
      *
-     * @param mixed $cause
-     * @param array|null $attrs
+     * @uses Headache::setHeadacheGetCause()
+     * @param null|array $attrs
+     * @param null|mixed $cause
      * @return Headache[]
      * @throws Throwable
      */
-    public function get($cause, ?array $attrs = null): array;
+    public function get(?array $attrs = null, $cause = null): array;
 
     /**
      * set into repository, according to "variety"
      *
-     * @param mixed $cause
      * @param array $attrs
+     * @param null|mixed $cause
      * @return int affected rows count or last insert id
      * @throws Throwable
      */
-    public function set($cause, array $attrs): int;
+    public function set(array $attrs, $cause = null): int;
 
     /**
      * set cause that will be used by get()
