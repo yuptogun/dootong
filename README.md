@@ -2,9 +2,7 @@
 
 A simple abstact dynamic pseudo-DTO ***model*** for PHP DDD.
 
-* D-oo-TO-ng
-* meaning: "headache" in Korean
-* pronunciation: "do tongue"
+> Dootong is romanization of 두통, a Korean word meaning "headache".
 
 ## Quick Start
 
@@ -56,7 +54,9 @@ class User extends Yuptogun\Dootong\Dootong
 }
 ```
 
-### `suffer(): Headache`
+And it can do the following:
+
+### `suffer(Variety $variety): Headache`
 
 Set a variety (i.e. type) of the headache.
 
@@ -69,21 +69,27 @@ use Yuptogun\Dootong\Varieties\Redis; // tbd
 $userFromMySQL = User::suffer(new MySQL($pdo));
 $userFromRedis = User::suffer(new Redis($redis));
 
-$DBUsers = $userFromMySQL->get('SELECT * FROM users');
-$RedisUsers = $userFromRedis->get('user:*');
-if ($DBUsers !== $RedisUsers) {
-    echo "this can and should happen";
+$DBUsers = $userFromMySQL->setHeadacheGettingCause('SELECT * FROM users')->get();
+$RedisUsers = $userFromRedis->setHeadacheGettingCause('user:*')->get();
+$RedisUserIDs = array_column($RedisUsers, 'id');
+foreach ($DBUsers as $DBUser) {
+    if (!in_array($DBUsers->id, $RedisUserIDs)) {
+        $userFromRedis->set($DBUser, 'user');
+    }
 }
 ```
 
-### `get(): Headache[]`
+### `get(?array $attrs = null, $cause = null): Headache[]`
 
-Fetches *many* from the provided repository.
+Fetches *many* entities from the given repository and query/command (i.e. "cause" of Headache)
 
 ```php
 /** @var \PDO $pdo */
 $dto = User::suffer(new MySQL($pdo));
-$users = $dto->get("SELECT * FROM users");
+$users = $dto->get(
+    ['email_domain' => 'yahoo.com'],
+    "SELECT * FROM users WHERE email LIKE concat('%@', :email_domain)"
+);
 
 foreach ($users as $user) {
     if ($user->pwd) {
@@ -92,10 +98,17 @@ foreach ($users as $user) {
     if (!is_int($user->id)) {
         throw new \Exception('this never happens: see castings');
     }
+    if (stripos($user->email, 'yahoo.com') === FALSE) {
+        throw new \Exception('this never happens: see attrs and cause');
+    }
 }
 ```
 
-### `set(): int`
+### `setHeadacheGettingCause($cause): Headache`
+
+Defines how the entities should be fetched.
+
+### `set(array $attrs, $cause = null): int`
 
 Registers *one* entity into the provided repository.
 
@@ -112,7 +125,7 @@ $inputs = [
 
 /** @var \PDO $pdo */
 $dto = User::suffer(new MySQL($pdo));
-$newUserID = $dto->set($query, $inputs);
+$newUserID = $dto->set($inputs, $query);
 $newUser   = $dto->get("SELECT * FROM users WHERE id = :newUserID", compact('newUserID'))[0];
 if ($newUser->pwd) {
     throw new \Exception('this never happens');
@@ -133,17 +146,29 @@ try {
 }
 ```
 
+### `setHeadacheSettingCause($cause): Headache`
+
+Defines how the entities should be registered.
+
 ## Core Concepts
 
-### Comparison to conventional ORMs
+### Nothing Else Than Getter and Setter
 
-Suppose you have to deal with a dataset based on a query like the following.
+Every `Dootong` is only a holder of attribues with extra methods to set/get them.
+
+Its children or dependents will do the funs with the attributes; `Dootong` itself shall not.
+
+Any ideas/commits/issues against this fundamental will be rejected.
+
+### Real World Problems First
+
+The primary purpose of this library is to solve the real world problems with the "messy" data storages and their structures, which are probably your daily headache.
 
 ```sql
 SELECT
-    a.a_id,
-    max(a.a_name) AS a_name,
-    ifnull(max(bc.bc_name), '') AS bc_name
+    a.a_id AS `user_id`,
+    max(a.a_name) AS `user_name`,
+    ifnull(max(bc.bc_name), '') AS `purchase_name`
 FROM a
 LEFT JOIN (
     SELECT b.a_id, b.b_name AS bc_name, concat(b.b_name, b.b_id) AS bc_id
@@ -154,12 +179,12 @@ LEFT JOIN (
     FROM c WHERE c.a_id = a.a_id
     AND c.created_at >= '2021-01-01 00:00:00' AND c.cancelled_at IS NULL
 ) bc ON bc.a_id = a.a_id
-WHERE a.email LIKE '%@test.com'
-AND bc.bc_name LIKE '%subscription%'
+WHERE a.email LIKE concat('%@', :email_domain)
+AND bc.bc_name LIKE concat('%', :product_name)
 GROUP BY a.a_id, bc.bc_id;
 ```
 
-In Theoretical ORM usages you start by analyzing the given query and converting into a lot of entities and their relationships.
+To resolve this kind of problems, the attempts with ORMs can be easily defeated. Look at the query above for example; can you define all relationships so the Object-*Relationship*-Models would happily do the rest?
 
 ```php
 class User extends Model {
@@ -180,43 +205,23 @@ class WebPurchase extends Model {
     // yaddy yadda
 }
 $userPurchases = User::where(function ($q) {
-        $q->whereHas('webPurchase', function ($r) { /* ... */ })
-        ->orWhereHas('appPurchase', function ($r) { /* ... */ });
+        $q->whereHas('webPurchase', function ($r) { /* waka waka */ })
+        ->orWhereHas('appPurchase', function ($r) { /* ahda kohda */ });
     })->where(/*  ... */)->get(); // ERROR! still a lot to do
 ```
 
-This is because that's the way the ORMs work with data. It premises that tables and columns have inherent and essential relationships. As a result, the more the way of fetching data is complicated, the more the constraints, the less you can do with them.
-
-`Dootong` is a trade-off to that. It never assumes any relationships, indexing rules or whatsoever. It just `get()` and `set()` the data according to its variety and cause.
+Instead, try replacing your *headache* with *`Dootong`*. (Get it?) Just bring your queries/relationships/constraints that are working for whatever reason, give that "cause" to your `Dootong` and BOOM! Jobs done.
 
 ```php
-// take this joke for example
-class UserModel extends \Illuminate\Database\Eloquent\Model {
-    protected $table = 'users';
+class PayingUserSince2021 extends \Yuptogun\Dootong\Dootong {
+    protected $fillable = ['user_id', 'user_name', 'purchase_name'];
 }
-$userArray = UserModel::whereDoesntHave('subs')->get();
-
-// $userArray alone works 100%, but you can still use Dootong
-class User extends \Yuptogun\Dootong\Dootong {
-    protected $fillable = ['name', 'age'];
-}
-$users = User::suffer(new StaticArray($userArray));
-```
-
-ORMs are great, but when all you want to do is entity-level jobs like validating input values, filtering soft-deleted rows and/or casting attribute types, doing it with ORMs could be an overkill.
-
-After all, sooner or later, we all should deal with heavy queries and/or raw data anyway. It is the real problem that would cause a headache, which `Dootong` is to resolve.
-
-```php
-// as long as this MySQL query works, all you need is a MySQL Dootong ...
-$query = "SELECT a.a_id ... GROUP BY a.a_id, bc.bc_id";
-
-// ... that lets you focus on final selects
-class UserPurchase extends \Yuptogun\Dootong\Dootong {
-    $fillable = ['a_id', 'a_name', 'bc_name'];
-    $casts = ['a_id' => 'increment'];
-}
-$userPurchases = UserPurchase::suffer(new MySQL($pdo))->get($query);
+$subscribers = PayingUserSince2021::suffer(new MySQL($pdo))
+    ->setHeadacheGettingCause($theQuery)
+    ->get([
+        'email_domain' => 'test.com',
+        'product_name' => 'subscription'
+    ]);
 ```
 
 ## Expectedly Asked Questions
@@ -227,16 +232,6 @@ No it isn't. after all I don't buy that idea entirely.
 
 * "A class with no methods" itself is a joke to me. Why not JSON then?
 * The properties MUST have some attributes and characteristics; DTO in theory never resolves that requirements.
-
-### Q. What about update/delete?
-
-I have a number of unsolved problems to properly implement it.
-
-* Transactions?
-* (Can it) return updated Dootongs only or all update-requested ones?
-* Isn't it too much for it? (e.g. no `Dootong` should care what tables are used)
-
-If you have a soulution, please make a pull request and let us see.
 
 ### Q. Do you have the "variety" adapter of `[insert your favorite repository here]`?
 
