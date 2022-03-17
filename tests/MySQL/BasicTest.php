@@ -23,14 +23,22 @@ class User extends Dootong
 
 final class BasicTest extends MySQLTest
 {
-    public function testWrongDootong(): void
+    /**
+     * @testdox you never get Dootong if Headache Variety is undetermined
+     */
+    public function testDootongWithoutVariety(): void
     {
         $this->expectException(Exception::class);
+
         $wrongDootong = new User;
-        $wrongDootong->get("SELECT * FROM users");
+        $wrongDootong->setHeadacheGettingCause("SELECT * FROM users");
+        $wrongDootong->get();
     }
 
-    public function testCorrectDootong(): void
+    /**
+     * @testdox every Dootong should have (i.e. suffer from) Variety
+     */
+    public function testDootongWithVariety(): void
     {
         $correctDootong1 = new User(new MySQL($this->getPDO()));
         $correctDootong2 = User::suffer(new MySQL($this->getPDO()));
@@ -39,7 +47,10 @@ final class BasicTest extends MySQLTest
         $this->assertInstanceOf(User::class, $correctDootong2);
     }
 
-    public function testCanGetUsers(): void
+    /**
+     * @testdox every Dootong can hold key-value pairs and cast the values
+     */
+    public function testCastings(): void
     {
         foreach ($this->getAllUsers() as $user) {
             /** @var User $user */
@@ -52,7 +63,10 @@ final class BasicTest extends MySQLTest
         }
     }
 
-    public function testCanGetAllUsers(): void
+    /**
+     * @testdox if Dootong can be soft deleted then regarding information should be available
+     */
+    public function testSoftDelete(): void
     {
         foreach ($this->getAllUsers(true) as $user) {
             /** @var Dootong $user */
@@ -71,8 +85,9 @@ final class BasicTest extends MySQLTest
     {
         $dootong = User::suffer(new MySQL($this->getPDO()));
         $cause = "SELECT * FROM users";
+        $dootong->setHeadacheGettingCause($cause);
         return $withTrashed
-            ? $dootong->withTrashed()->get($cause)
-            : $dootong->get($cause);
+            ? $dootong->withTrashed()->get()
+            : $dootong->get();
     }
 }

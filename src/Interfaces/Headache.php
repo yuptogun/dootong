@@ -26,22 +26,53 @@ interface Headache
     /**
      * get from repository, according to "variety"
      *
-     * @param mixed $cause
-     * @param array|null $attrs
+     * @uses Headache::setHeadacheGetCause()
+     * @param null|array $attrs
+     * @param null|mixed $cause
      * @return Headache[]
      * @throws Throwable
      */
-    public function get($cause, ?array $attrs = null): array;
+    public function get(?array $attrs = null, $cause = null): array;
 
     /**
      * set into repository, according to "variety"
      *
-     * @param mixed $cause
      * @param array $attrs
+     * @param null|mixed $cause
      * @return int affected rows count or last insert id
      * @throws Throwable
      */
-    public function set($cause, array $attrs): int;
+    public function set(array $attrs, $cause = null): int;
+
+    /**
+     * set cause that will be used by get()
+     *
+     * @param mixed $cause SQL query, callback, whatever
+     * @return Headache
+     */
+    public function setHeadacheGettingCause($cause): Headache;
+
+    /**
+     * set cause that will be used by set()
+     *
+     * @param mixed $cause SQL query, callback, whatever
+     * @return Headache
+     */
+    public function setHeadacheSettingCause($cause): Headache;
+
+    /**
+     * get cause that works while get()
+     *
+     * @return mixed
+     */
+    public function getHeadacheGettingCause();
+
+    /**
+     * get cause that works while set()
+     *
+     * @return mixed
+     */
+    public function getHeadacheSettingCause();
 
     /**
      * cast user input while set

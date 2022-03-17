@@ -28,9 +28,11 @@ class MySQL implements DootongVariety
     /**
      * @param string $cause MySQL query string that eventually SELECT
      */
-    public function get(Dootong $dootong, $cause, ?array $params = null): array
+    public function get(Dootong $dootong, ?array $params = null): array
     {
         $this->setDootong($dootong);
+
+        $cause = $this->getDootong()->getHeadacheGettingCause();
         $query = $this->executeQuery($cause, $params);
 
         /** @var Headache[] $dootongs */
@@ -47,14 +49,16 @@ class MySQL implements DootongVariety
     /**
      * @param string $cause MySQL query string that eventually UPDATE, INSERT or DELETE
      */
-    public function set(Dootong $dootong, $cause, array $params): int
+    public function set(Dootong $dootong, array $params): int
     {
         $this->setDootong($dootong);
+
+        $cause = $this->getDootong()->getHeadacheSettingCause();
         $query = $this->executeQuery($cause, $params);
 
-        $isInsert = (bool) preg_match('/INSERT\s+INTO\s+/i', $cause);
+        $causeHasInsert = stripos($cause, 'INSERT INTO ') !== false;
         $hasIncrementingKey = $this->getDootong()->hasIncrementingKey();
-        return $isInsert && $hasIncrementingKey ? (int) $this->pdo->lastInsertId() : $query->rowCount();
+        return $causeHasInsert && $hasIncrementingKey ? (int) $this->pdo->lastInsertId() : $query->rowCount();
     }
 
     public function getDootong(): Dootong
