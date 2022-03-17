@@ -44,6 +44,36 @@ interface Headache
     public function set($cause, array $attrs): int;
 
     /**
+     * set cause that will be used by get()
+     *
+     * @param mixed $cause SQL query, callback, whatever
+     * @return Headache
+     */
+    public function setHeadacheGettingCause($cause): Headache;
+
+    /**
+     * set cause that will be used by set()
+     *
+     * @param mixed $cause SQL query, callback, whatever
+     * @return Headache
+     */
+    public function setHeadacheSettingCause($cause): Headache;
+
+    /**
+     * get cause that works while get()
+     *
+     * @return mixed
+     */
+    public function getHeadacheGettingCause();
+
+    /**
+     * get cause that works while set()
+     *
+     * @return mixed
+     */
+    public function getHeadacheSettingCause();
+
+    /**
      * cast user input while set
      *
      * @param string $attr return of getCasting()

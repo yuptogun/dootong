@@ -33,6 +33,20 @@ class Dootong implements JsonSerializable, Headache
      */
     private $variety;
 
+    /**
+     * where these `Headache[]` are from?
+     *
+     * @var mixed
+     */
+    private $getCause;
+
+    /**
+     * how I get this `Headache`?
+     *
+     * @var mixed
+     */
+    private $setCause;
+
     // ---- JsonSerializable implementation ---- //
 
     public function jsonSerialize(): array
@@ -64,6 +78,28 @@ class Dootong implements JsonSerializable, Headache
     public function set($cause, array $attrs): int
     {
         return $this->getVariety()->set($this, $cause, $attrs);
+    }
+
+    public function setHeadacheGettingCause($cause): Headache
+    {
+        $this->getCause = $cause;
+        return $this;
+    }
+
+    public function setHeadacheSettingCause($cause): Headache
+    {
+        $this->setCause = $cause;
+        return $this;
+    }
+
+    public function getHeadacheGettingCause()
+    {
+        return $this->getCause;
+    }
+
+    public function getHeadacheSettingCause()
+    {
+        return $this->setCause;
     }
 
     public function getVariety(): Variety
