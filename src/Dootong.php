@@ -2,8 +2,10 @@
 namespace Yuptogun\Dootong;
 
 use DateTime;
-use Exception;
 use JsonSerializable;
+use Exception;
+use InvalidArgumentException;
+
 use Yuptogun\Dootong\Interfaces\Variety;
 use Yuptogun\Dootong\Interfaces\Headache;
 
@@ -82,6 +84,14 @@ class Dootong implements JsonSerializable, Headache
     {
         if ($cause !== null) {
             $this->setSetCause($cause);
+        }
+        if (is_array($attrs)) {
+            $keys = array_keys($attrs);
+            foreach ($this->getRequiredAttributes() as $required) {
+                if (!array_key_exists($required, $keys)) {
+                    throw new InvalidArgumentException(self::class . " requires $required attribute!");
+                }
+            }
         }
         return $this->getVariety()->set($this, $attrs);
     }
