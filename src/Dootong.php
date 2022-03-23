@@ -9,7 +9,7 @@ use InvalidArgumentException;
 use Yuptogun\Dootong\Interfaces\Variety;
 use Yuptogun\Dootong\Interfaces\Headache;
 
-class Dootong implements JsonSerializable, Headache
+abstract class Dootong implements JsonSerializable, Headache
 {
     protected $fillable = [];
     protected $required = [];
