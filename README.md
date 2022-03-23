@@ -1,6 +1,6 @@
 # dootong
 
-A simple abstact dynamic pseudo-DTO ***model*** for PHP DDD.
+A simple abstract dynamic pseudo-DTO ***model*** for PHP DDD.
 
 > Dootong is romanization of 두통, a Korean word meaning "headache".
 
@@ -12,7 +12,7 @@ Every `Yuptogun\Dootong\Interfaces\Headache` implementation looks like the follo
 class User extends Yuptogun\Dootong\Dootong
 {
     /**
-     * attributes to get
+     * attributes to get & set
      * @required true
      */
     protected $fillable = [
@@ -69,8 +69,8 @@ use Yuptogun\Dootong\Varieties\Redis; // tbd
 $userFromMySQL = User::suffer(new MySQL($pdo));
 $userFromRedis = User::suffer(new Redis($redis));
 
-$DBUsers = $userFromMySQL->setHeadacheGettingCause('SELECT * FROM users')->get();
-$RedisUsers = $userFromRedis->setHeadacheGettingCause('user:*')->get();
+$DBUsers = $userFromMySQL->setGetCause('SELECT * FROM users')->get();
+$RedisUsers = $userFromRedis->setGetCause('user:*')->get();
 $RedisUserIDs = array_column($RedisUsers, 'id');
 foreach ($DBUsers as $DBUser) {
     if (!in_array($DBUsers->id, $RedisUserIDs)) {
@@ -104,7 +104,7 @@ foreach ($users as $user) {
 }
 ```
 
-### `setHeadacheGettingCause($cause): Headache`
+### `setGetCause($cause): Headache`
 
 Defines how the entities should be fetched.
 
@@ -146,7 +146,7 @@ try {
 }
 ```
 
-### `setHeadacheSettingCause($cause): Headache`
+### `setSetCause($cause): Headache`
 
 Defines how the entities should be registered.
 
@@ -207,17 +207,17 @@ class WebPurchase extends Model {
 $userPurchases = User::where(function ($q) {
         $q->whereHas('webPurchase', function ($r) { /* waka waka */ })
         ->orWhereHas('appPurchase', function ($r) { /* ahda kohda */ });
-    })->where(/*  ... */)->get(); // ERROR! still a lot to do
+    })->where(/*  ... */)->get(); // bummer! still a lot to do
 ```
 
 Instead, try replacing your *headache* with *`Dootong`*. (Get it?) Just bring your queries/relationships/constraints that are working for whatever reason, give that "cause" to your `Dootong` and BOOM! Jobs done.
 
 ```php
-class PayingUserSince2021 extends \Yuptogun\Dootong\Dootong {
+class PayingUserSince2021 extends Dootong {
     protected $fillable = ['user_id', 'user_name', 'purchase_name'];
 }
 $subscribers = PayingUserSince2021::suffer(new MySQL($pdo))
-    ->setHeadacheGettingCause($theQuery)
+    ->setGetCause($theQuery)
     ->get([
         'email_domain' => 'test.com',
         'product_name' => 'subscription'
