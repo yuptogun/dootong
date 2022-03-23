@@ -31,7 +31,7 @@ final class BasicTest extends MySQLTest
         $this->expectException(Exception::class);
 
         $wrongDootong = new User;
-        $wrongDootong->setHeadacheGettingCause("SELECT * FROM users");
+        $wrongDootong->setGetCause("SELECT * FROM users");
         $wrongDootong->get();
     }
 
@@ -85,7 +85,7 @@ final class BasicTest extends MySQLTest
     {
         $dootong = User::suffer(new MySQL($this->getPDO()));
         $cause = "SELECT * FROM users";
-        $dootong->setHeadacheGettingCause($cause);
+        $dootong->setGetCause($cause);
         return $withTrashed
             ? $dootong->withTrashed()->get()
             : $dootong->get();

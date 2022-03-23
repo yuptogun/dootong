@@ -32,7 +32,7 @@ class MySQL implements DootongVariety
     {
         $this->setDootong($dootong);
 
-        $cause = $this->getDootong()->getHeadacheGettingCause();
+        $cause = $this->getDootong()->getGetCause();
         $query = $this->executeQuery($cause, $params);
 
         /** @var Headache[] $dootongs */
@@ -53,7 +53,7 @@ class MySQL implements DootongVariety
     {
         $this->setDootong($dootong);
 
-        $cause = $this->getDootong()->getHeadacheSettingCause();
+        $cause = $this->getDootong()->getSetCause();
         $query = $this->executeQuery($cause, $params);
 
         $causeHasInsert = stripos($cause, 'INSERT INTO ') !== false;
