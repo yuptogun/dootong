@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Tests\MySQL;
 
 use Exception;
+use InvalidArgumentException;
 use Tests\MySQL as MySQLTest;
 use Yuptogun\Dootong\Dootong;
 use Yuptogun\Dootong\Varieties\MySQL;
@@ -12,6 +13,9 @@ class User extends Dootong
 {
     protected $fillable = [
         'id', 'email', 'name', 'password', 'created_at',
+    ];
+    protected $required = [
+        'email', 'password',
     ];
     protected $casts = [
         'id' => 'increment',
@@ -76,6 +80,22 @@ final class BasicTest extends MySQLTest
                 $this->assertNull($user->deleted_at);
             }
         }
+    }
+
+    /**
+     * @testdox if Dootong has defined required attributes, none of them should be excluded when set()
+     */
+    public function testSetWithoutRequiredAttributes(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        $cause = "INSERT INTO users (`name`, created_at) VALUES (:username, :created_at)";
+        $dootong = User::suffer(new MySQL($this->getPDO()));
+        $dootong->set([
+            'username' => 'foo',
+            'password' => 'bar',
+            'created_at' => date('Y-m-d H:i:s'),
+        ], $cause);
     }
 
     /**
