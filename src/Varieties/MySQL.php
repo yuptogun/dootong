@@ -1,8 +1,10 @@
-<?php
+<?php declare(strict_types=1);
+
 namespace Yuptogun\Dootong\Varieties;
 
 use PDO;
 use PDOStatement;
+
 use Yuptogun\Dootong\Dootong;
 use Yuptogun\Dootong\Interfaces\Variety as DootongVariety;
 
