@@ -47,16 +47,16 @@ class MySQL implements DootongVariety
     }
 
     /**
-     * @param string $cause MySQL query string that eventually UPDATE, INSERT or DELETE
+     * @param string $sql MySQL query string that eventually UPDATE, INSERT or DELETE
      */
     public function set(Dootong $dootong, array $params): int
     {
         $this->setDootong($dootong);
 
-        $cause = $this->getDootong()->getSetCause();
-        $query = $this->executeQuery($cause, $params);
+        $sql = $this->getDootong()->getSetCause();
+        $query = $this->executeQuery($sql, $params);
 
-        $causeHasInsert = stripos($cause, 'INSERT INTO ') !== false;
+        $causeHasInsert = stripos($sql, 'INSERT INTO ') !== false;
         $hasIncrementingKey = $this->getDootong()->hasIncrementingKey();
         return $causeHasInsert && $hasIncrementingKey ? (int) $this->pdo->lastInsertId() : $query->rowCount();
     }
@@ -73,20 +73,20 @@ class MySQL implements DootongVariety
 
     // ---- Variety implementation ---- //
 
-    private function executeQuery(string $query, ?array $params = null): PDOStatement
+    private function executeQuery(string $sql, ?array $params = null): PDOStatement
     {
-        $query = $this->prepareQuery($query, $params);
+        $query = $this->prepareQuery($sql, $params);
         $query->execute();
         return $query;
     }
 
-    private function prepareQuery(string $query, ?array $params = null): PDOStatement
+    private function prepareQuery(string $sql, ?array $params = null): PDOStatement
     {
-        $query = $this->pdo->prepare($query);
+        $query = $this->pdo->prepare($sql);
         if (!empty($params)) {
             foreach ($params as $key => $value) {
                 $param = ":$key";
-                if (strpos($query, $param) !== FALSE) {
+                if (strpos($sql, $param) !== FALSE) {
                     $query->bindParam($param, $this->getDootong()->getCastedValue($key, $value), $this->getParamType($key));
                 }
             }
