@@ -1,10 +1,10 @@
-<?php
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace Tests\MySQL;
 
 use Exception;
 use InvalidArgumentException;
+
 use Tests\MySQL as MySQLTest;
 use Yuptogun\Dootong\Dootong;
 use Yuptogun\Dootong\Varieties\MySQL;
