@@ -7,6 +7,7 @@ use JsonSerializable;
 use Throwable;
 use Exception;
 use InvalidArgumentException;
+
 use Yuptogun\Dootong\Interfaces\Variety;
 use Yuptogun\Dootong\Interfaces\Headache;
 
