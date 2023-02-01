@@ -4,6 +4,7 @@ namespace Yuptogun\Dootong;
 
 use DateTime;
 use JsonSerializable;
+use Throwable;
 use Exception;
 use InvalidArgumentException;
 
@@ -135,6 +136,26 @@ abstract class Dootong implements JsonSerializable, Headache
     public function getCastedValue(string $attr, $value)
     {
         $type = $this->getCasting($attr);
+        $isTypeNullable = substr($type, 0, 1) === '?';
+        if ($isTypeNullable) {
+            $type = substr($type, 1);
+        }
+
+        if (strpos($type, '::class') !== false) {
+            try {
+                return new $type($value);
+            } catch (Throwable $th) {
+                if ($isTypeNullable) {
+                    return null;
+                }
+                throw $th;
+            }
+        }
+
+        if ($isTypeNullable && $value === null) {
+            return null;
+        }
+
         switch ($type) {
             case 'int': case 'integer': case 'increment':
                 return (int) $value;
@@ -157,7 +178,7 @@ abstract class Dootong implements JsonSerializable, Headache
                 return strtolower($cast);
             }
         }
-        return 'string';
+        return '?string';
     }
 
     public function hasIncrementingKey(): bool
