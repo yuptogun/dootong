@@ -13,43 +13,49 @@ use Yuptogun\Dootong\Interfaces\Headache;
 
 abstract class Dootong implements JsonSerializable, Headache
 {
-    protected $fillable = [];
-    protected $required = [];
-    protected $hidden = [];
-    protected $casts = [];
-
     /**
-     * @var null|string
-     */
-    protected $deletedAt;
-
-    /**
-     * all values stored here
-     *
      * @var array
      */
     private $attributes = [];
 
-    /**
-     * what kind of `Headache` is it?
-     *
-     * @var Variety
-     */
-    private $variety;
+    // ---- abstract methods --- //
 
     /**
-     * where these `Headache[]` are from?
+     * define the attributes here
      *
-     * @var mixed
+     * @return string[]
      */
-    private $getCause;
+    abstract protected function getAttributes(): array;
 
     /**
-     * how I get this `Headache`?
+     * define the "must-set" attributes here
      *
-     * @var mixed
+     * @return string[] return an empty array if every attribute is optional
      */
-    private $setCause;
+    abstract protected function getRequiredAttributes(): array;
+
+    /**
+     * define the "set-only" attributes here
+     *
+     * @return string[] return an empty array if nothing should be invisible
+     */
+    abstract protected function getHiddenAttributes(): array;
+
+    /**
+     * define the "types" of attributes here
+     *
+     * ['foo' => 'int', 'bar' => 'password', 'id' => 'increment', ...]
+     *
+     * @return array return an empty array if everything is a string
+     */
+    abstract protected function getAttributeCastings(): array;
+
+    /**
+     * define the "deleted at" attribute here
+     *
+     * @return string|null
+     */
+    abstract protected function getDeletedAtName(): ?string;
 
     // ---- JsonSerializable implementation ---- //
 
@@ -173,6 +179,9 @@ abstract class Dootong implements JsonSerializable, Headache
 
     public function getCasting(string $attr): string
     {
+        if ($attr === $this->getDeletedAtName()) {
+            return '?datetime';
+        }
         foreach ($this->getAttributeCastings() as $attribute => $cast) {
             if ($attr === $attribute) {
                 return strtolower($cast);
@@ -258,26 +267,11 @@ abstract class Dootong implements JsonSerializable, Headache
 
     protected function getFillableAttributes(): array
     {
-        $fillables = $this->fillable;
+        $fillables = $this->getAttributes();
         if ($this->isSoftDeletable()) {
             $fillables[] = $this->getDeletedAtName();
         }
         return $fillables;
-    }
-
-    protected function getHiddenAttributes(): array
-    {
-        return $this->hidden;
-    }
-
-    protected function getDeletedAtName(): ?string
-    {
-        return $this->deletedAt;
-    }
-
-    protected function getAttributes(): array
-    {
-        return $this->attributes;
     }
 
     protected function isAttributeRequired(string $name): bool
@@ -285,25 +279,11 @@ abstract class Dootong implements JsonSerializable, Headache
         return in_array($name, $this->getRequiredAttributes());
     }
 
-    protected function getRequiredAttributes(): array
-    {
-        return $this->required;
-    }
-
     protected function castAttributes(): void
     {
         foreach ($this->getAttributeCastings() as $attr => $type) {
             $this->setCastedValue($attr, $type);
         }
-    }
-
-    protected function getAttributeCastings(): array
-    {
-        $casts = $this->casts;
-        if ($this->isSoftDeletable()) {
-            $casts[$this->getDeletedAtName()] = 'datetime';
-        }
-        return $casts;
     }
 
     protected function setCastedValue($attr, $type)
