@@ -240,3 +240,13 @@ I suppose not. If you can write one for yourself, please consider a contribution
 ### Q. "`Dootong\Variety\Foo` type `Headache` caused by `$cause`"? You serious? No plan to rename the package name or namespaces?
 
 Unless you come up with better DTO jokes.
+
+## How to contribute
+
+### Unit test
+
+```sh
+docker-compose up -d --build
+docker run --rm -it -v "$(pwd):/app" -w /app composer install --ignore-platform-reqs
+docker run --rm -it -v "$(pwd):/app" -w /app yuptogun/dootong-test-php php ./vendor/bin/phpunit tests
+```

@@ -1,0 +1,25 @@
+services:
+  php:
+    image: yuptogun/dootong-test-php
+    build:
+      dockerfile: .docker/php/Dockerfile
+      context: .
+  db:
+    image: lscr.io/linuxserver/mariadb:latest
+    container_name: dootong_test_db
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - MYSQL_ROOT_PASSWORD=${TEST_MYSQL_PASSWORD:-test}
+      - MYSQL_DATABASE=${TEST_MYSQL_DATABASE:-test}
+      - MYSQL_USER=${TEST_MYSQL_USERNAME:-test}
+      - MYSQL_PASSWORD=${TEST_MYSQL_PASSWORD:-test}
+    volumes:
+      - dootong_test_db:/config
+      - .docker/db/:/config/initdb.d
+    ports:
+      - 3206:3306
+volumes:
+  dootong_test_db:
+    driver: local
