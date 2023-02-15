@@ -25,11 +25,9 @@ abstract class MySQL extends TestCase
         $charset = $_ENV['TEST_MYSQL_CHARSET'] ?? 'utf8';
         $dsn = "mysql:host=$host;port=$port;dbname=$database;charset=$charset";
 
-        $pdo = new PDO($dsn, $username, $password, [
+        self::$pdo = new PDO($dsn, $username, $password, [
             PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'UTF8'",
         ]);
-        $pdo->exec(file_get_contents(__DIR__.'/MySQL/test.sql'));
-        self::$pdo = $pdo;
     }
 
     public static function tearDownAfterClass(): void
