@@ -3,20 +3,34 @@
 namespace Yuptogun\Dootong;
 
 use DateTime;
-use JsonSerializable;
+use Generator;
 use Throwable;
-use Exception;
+use JsonSerializable;
 use InvalidArgumentException;
+use RuntimeException;
+use Yuptogun\Dootong\Headache;
 
-use Yuptogun\Dootong\Interfaces\Variety;
-use Yuptogun\Dootong\Interfaces\Headache;
-
-abstract class Dootong implements JsonSerializable, Headache
+/**
+ * DTO working with `Headache` repositories
+ */
+abstract class Dootong implements JsonSerializable
 {
     /**
      * @var array
      */
     private $attributes = [];
+
+    /**
+     * @var null|Headache
+     */
+    private $repository;
+
+    /**
+     * define "deleted at" datetime attribute
+     *
+     * @var null|string
+     */
+    protected $deletedAt;
 
     // ---- abstract methods --- //
 
@@ -55,7 +69,10 @@ abstract class Dootong implements JsonSerializable, Headache
      *
      * @return string|null
      */
-    abstract protected function getDeletedAtName(): ?string;
+    protected function getDeletedAtName(): ?string
+    {
+        return $this->deletedAt;
+    }
 
     // ---- JsonSerializable implementation ---- //
 
@@ -64,79 +81,164 @@ abstract class Dootong implements JsonSerializable, Headache
         return $this->getPublicAttributes();
     }
 
-    // ---- Headache implementation ---- //
-
-    public function __construct(?Variety $variety = null)
+    /**
+     * nominal constructor, or Headache-free hydration
+     *
+     * @param array|null $data\
+     */
+    public function __construct(?array $data = null)
     {
-        if ($variety) {
-            $this->setVariety($variety);
+        if (!empty($data)) {
+            foreach ($data as $key => $value) {
+                $this->{$key} = $value;
+            }
         }
     }
 
-    public static function suffer(Variety $variety): Headache
+    /**
+     * factory method
+     *
+     * @param Headache $headache
+     * @return $this
+     */
+    public static function sufferFrom(Headache $headache): self
     {
         $dootong = new static;
-        $dootong->setVariety($variety);
+        $dootong->setRepository($headache);
         return $dootong;
     }
 
-    public function get(?array $attrs = null, $cause = null): array
+    /**
+     * immutably set repository
+     *
+     * @param Headache $repository
+     * @return self
+     */
+    public function setRepository(Headache $repository): self
     {
-        if ($cause !== null) {
-            $this->setGetCause($cause);
+        if (!$this->repository) {
+            $this->repository = $repository;
         }
-        return $this->getVariety()->get($this, $attrs);
+        return $this;
     }
 
-    public function set(array $attrs, $cause = null): int
+    /**
+     * mutate already-set repository
+     *
+     * @param Headache $repository
+     * @return self
+     */
+    public function resetRepository(Headache $repository): self
     {
-        if ($cause !== null) {
-            $this->setSetCause($cause);
+        $this->repository = $repository;
+        return $this;
+    }
+
+    /**
+     * alias of resetRepository()
+     *
+     * @param Headache $headache
+     * @return self
+     */
+    public function worsen(Headache $headache): self
+    {
+        return $this->resetRepository($headache);
+    }
+
+    /**
+     * fetch from repository
+     *
+     * @param array|null $cause whatever the "diagnose" requires to provide
+     * @return Generator|$this[]
+     * @throws RuntimeException if repository is not ready
+     */
+    public function get(?array $cause = null): Generator
+    {
+        if (!$this->repository || !$this->repository->isDiagnosed()) {
+            throw new RuntimeException('Please diagnose() this Headache!');
         }
-        if (is_array($attrs)) {
-            $keys = array_keys($attrs);
-            foreach ($this->getRequiredAttributes() as $required) {
-                if (!array_key_exists($required, $keys)) {
-                    throw new InvalidArgumentException(self::class . " requires $required attribute!");
+        return $this->repository->get($this, $cause);
+    }
+
+    /**
+     * insert into repository
+     *
+     * @param array $cause whatever the "prescription" requires to provide
+     * @return integer how many records are set
+     * @throws RuntimeException if repository is not ready
+     * @throws InvalidArgumentException if any required attribute is missing in cause
+     */
+    public function set(array $cause): int
+    {
+        if (!$this->repository || !$this->repository->isPrescribed()) {
+            throw new RuntimeException('Please prescribe() this Headache!');
+        }
+        foreach ($this->getRequiredAttributes() as $required) {
+            if (!array_key_exists($required, $cause) || empty($cause[$required])) {
+                throw new InvalidArgumentException(get_class($this) . " requires $required attribute!");
+            }
+        }
+        return $this->repository->set($this, $cause);
+    }
+
+    public function withTrashed(): self
+    {
+        $this->deletedAt = null;
+        return $this;
+    }
+
+    public function isPassword(string $password, ?string $attribute = null)
+    {
+        if ($attribute === null) {
+            foreach ($this->getAttributeCastings() as $attr => $type) {
+                if ($type === 'password') {
+                    $attribute = $attr;
+                    break;
                 }
             }
         }
-        return $this->getVariety()->set($this, $attrs);
-    }
-
-    public function setGetCause($cause): Headache
-    {
-        $this->getCause = $cause;
-        return $this;
-    }
-
-    public function setSetCause($cause): Headache
-    {
-        $this->setCause = $cause;
-        return $this;
-    }
-
-    public function getGetCause()
-    {
-        return $this->getCause;
-    }
-
-    public function getSetCause()
-    {
-        return $this->setCause;
-    }
-
-    public function getVariety(): Variety
-    {
-        if (!$this->variety) {
-            throw new Exception(get_called_class()." Dootong is unknown of its Variety! Must suffer() from one first.");
+        if (!array_key_exists($attribute, $this->attributes)) {
+            return false;
         }
-        return $this->variety;
+        $hash = $this->attributes[$attribute];
+        return password_verify($password, $hash);
     }
 
-    public function setVariety(Variety $variety): void
+    public function __set(string $name, $value): void
     {
-        $this->variety = $variety;
+        $this->setAttribute($name, $value);
+    }
+
+    public function __get(string $name)
+    {
+        return $this->getAttribute($name);
+    }
+
+    public function __isset(string $name): bool
+    {
+        return array_key_exists($name, $this->attributes);
+    }
+
+    public function __unset(string $name): void
+    {
+        $attrs = $this->attributes;
+        unset($attrs[$name]);
+        $this->attributes = $attrs;
+    }
+
+    protected function setAttribute(string $name, $value)
+    {
+        if ($this->isAttributeFillable($name)) {
+            $this->attributes[$name] = $this->getCastedValue($name, $value);
+        }
+    }
+
+    protected function getAttribute(string $name)
+    {
+        if ($this->isAttributeHidden($name)) {
+            return null;
+        }
+        return $this->attributes[$name] ?? null;
     }
 
     public function getCastedValue(string $attr, $value)
@@ -210,51 +312,6 @@ abstract class Dootong implements JsonSerializable, Headache
         return $this->isSoftDeletable() && !empty($this->getAttribute($this->getDeletedAtName()));
     }
 
-    public function withTrashed(): Headache
-    {
-        $this->deletedAt = null;
-        return $this;
-    }
-
-    // ---- functions of abstract class Dootong ---- //
-
-    public function __set(string $name, $value): void
-    {
-        $this->setAttribute($name, $value);
-    }
-
-    public function __get(string $name)
-    {
-        return $this->getAttribute($name);
-    }
-
-    public function __isset(string $name): bool
-    {
-        return array_key_exists($name, $this->attributes);
-    }
-
-    public function __unset(string $name): void
-    {
-        $attrs = $this->attributes;
-        unset($attrs[$name]);
-        $this->attributes = $attrs;
-    }
-
-    protected function setAttribute(string $name, $value)
-    {
-        if ($this->isAttributeFillable($name)) {
-            $this->attributes[$name] = $this->getCastedValue($name, $value);
-        }
-    }
-
-    protected function getAttribute(string $name)
-    {
-        if ($this->isAttributeHidden($name)) {
-            return null;
-        }
-        return $this->getAttributes()[$name] ?? null;
-    }
-
     protected function isAttributeFillable(string $name): bool
     {
         return in_array($name, $this->getFillableAttributes());
@@ -262,7 +319,13 @@ abstract class Dootong implements JsonSerializable, Headache
 
     protected function isAttributeHidden(string $name): bool
     {
-        return in_array($name, $this->getHiddenAttributes());
+        $hidden = $this->getHiddenAttributes();
+        foreach ($this->getAttributeCastings() as $attr => $type) {
+            if ($type === 'password') {
+                $hidden[] = $attr;
+            }
+        }
+        return in_array($name, $hidden);
     }
 
     protected function getFillableAttributes(): array
