@@ -9,30 +9,32 @@ Your painkiller for writing DTOs in PHP.
 ```php
 class User extends Yuptogun\Dootong\Dootong
 {
-    protected $attributes = [
-        'email', 'username', 'id', 'bio', 'timezone',
-    ];
-    protected $required = [
-        'email', 'username', 'pwd',
-    ];
-    protected $hidden = [
-        'email', 'timezone',
-    ];
-    protected $casts = [
-        'id' => 'increment',
-        'email' => 'email',
-        'pwd' => 'password',
-    ];
+    protected function getAttributes(): array {
+        return ['id', 'email', 'username', 'password', 'created_at'];
+    }
+    protected function getRequiredAttributes(): array {
+        return ['email', 'password'];
+    }
+    protected function getHiddenAttributes(): array {
+        return [];
+    }
+    protected function getAttributeCastings(): array {
+        return [
+            'id'         => 'increment',
+            'password'   => 'password',
+            'created_at' => 'datetime',
+        ];
+    }
 }
 
 $user = User::sufferFrom(
     (new MySQL(new PDO('mysql:host=localhost;dbname=test', 'test', 'test')))
-        ->diagnose("SELECT * FROM users WHERE email LIKE ?")
-        ->prescribe("INSERT INTO users (email, username, pwd) VALUES (?, ?, ?)")
+        ->diagnose("SELECT * FROM users WHERE email LIKE concat('%', :email)")
+        ->prescribe("INSERT INTO users (email, username, pwd) VALUES (:email, :username, :pwd)")
 );
 
 /** @var User[] $yahooUsers */
-$yahooUsers = $user->get('@yahoo.com');
+$yahooUsers = $user->get(['email' => '@yahoo.com']);
 foreach ($yahooUsers as $u) {
 
     /** @var int $id type casted */
@@ -43,7 +45,11 @@ foreach ($yahooUsers as $u) {
 }
 
 /** @var User $newUser */
-$newUser = $user->set('foo@bar.com', 'foo', 'bar');
+$newUser = $user->set([
+    'email'    => 'foo@bar.com',
+    'username' => 'foo',
+    'pwd'      => 'bar',
+]);
 
 /** @var null $newUserPassword "password" type basically hidden */
 $newUserPassword = $newUser->pwd;
@@ -78,8 +84,11 @@ foreach ($ordersQueued as $order) {
 
     // each $order from Redis is compatible with one from DB, so it just works
     Order::sufferFrom($mysql)
-        ->prescribe("INSERT INTO orders (user_id, product_id) VALUES (?, ?)")
-        ->set($order->user_id, $order->product_id);
+        ->prescribe("INSERT INTO orders (user_id, product_id) VALUES (:user_id, :product_id)")
+        ->set([
+            'user_id'    => $order->user_id,
+            'product_id' => $order->product_id
+        ]);
 }
 ```
 
