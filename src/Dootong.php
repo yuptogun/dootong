@@ -187,7 +187,7 @@ abstract class Dootong implements JsonSerializable
         return $this;
     }
 
-    public function isPassword(string $password, ?string $attribute = null)
+    public function isPassword(string $password, ?string $attribute = null): bool
     {
         if ($attribute === null) {
             foreach ($this->getAttributeCastings() as $attr => $type) {
@@ -229,7 +229,7 @@ abstract class Dootong implements JsonSerializable
     protected function setAttribute(string $name, $value)
     {
         if ($this->isAttributeFillable($name)) {
-            $this->attributes[$name] = $this->getCastedValue($name, $value);
+            $this->attributes[$name] = $value;
         }
     }
 
@@ -238,7 +238,7 @@ abstract class Dootong implements JsonSerializable
         if ($this->isAttributeHidden($name)) {
             return null;
         }
-        return $this->attributes[$name] ?? null;
+        return $this->getCastedValue($name, $this->attributes[$name] ?? null);
     }
 
     public function getCastedValue(string $attr, $value)

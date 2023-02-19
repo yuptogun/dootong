@@ -2,7 +2,7 @@
 
 Your painkiller for writing DTOs in PHP.
 
-> "headache" is "두통" in Korean, which is Romanized into DooTOng.
+> "headache" in Korean is "두통", which is Romanized into DooTOng.
 
 ## Quick Start
 
@@ -45,18 +45,18 @@ foreach ($yahooUsers as $u) {
 }
 
 /** @var User $newUser */
-$newUser = $user->set([
+$newUser = $user->get($user->set([
     'email'    => 'foo@bar.com',
     'username' => 'foo',
     'pwd'      => 'bar',
-]);
+]));
 
 /** @var null $newUserPassword "password" type basically hidden */
 $newUserPassword = $newUser->pwd;
 
 /**
  * "password" type works with comparison method.
- * if you have multiple password type attributes, specify it in the second argument.
+ * if you have multiple password type attributes, specify one in the second argument.
  *
  * @var true $newUserPasswordCheck
  */
@@ -74,15 +74,12 @@ Any `Dootong` can "suffer from" any types of `Headache`, as long as they get alo
 ```php
 use MyApp\DTO\Order;
 
-// note that we use same Order DTO with multiple types of Headache
 $redis = new Yuptogun\Dootong\Types\Redis($config);
 $mysql = new Yuptogun\Dootong\Types\MySQL($pdo);
 $ordersQueued = Order::setRepository($redis)
     ->diagnose('LRANGE orders 0 10')
     ->get();
 foreach ($ordersQueued as $order) {
-
-    // each $order from Redis is compatible with one from DB, so it just works
     Order::sufferFrom($mysql)
         ->prescribe("INSERT INTO orders (user_id, product_id) VALUES (:user_id, :product_id)")
         ->set([
