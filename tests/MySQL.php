@@ -3,7 +3,6 @@
 namespace Tests;
 
 use PDO;
-use Dotenv\Dotenv;
 use PHPUnit\Framework\TestCase;
 
 abstract class MySQL extends TestCase
@@ -15,17 +14,7 @@ abstract class MySQL extends TestCase
 
     public static function setUpBeforeClass(): void
     {
-        $dotenv = Dotenv::createImmutable(__DIR__.'/../');
-        $dotenv->load();
-        $host = $_ENV['TEST_MYSQL_HOST'];
-        $port = $_ENV['TEST_MYSQL_PORT'];
-        $username = $_ENV['TEST_MYSQL_USERNAME'];
-        $database = $_ENV['TEST_MYSQL_DATABASE'];
-        $password = $_ENV['TEST_MYSQL_PASSWORD'] ?? null;
-        $charset = $_ENV['TEST_MYSQL_CHARSET'] ?? 'utf8';
-        $dsn = "mysql:host=$host;port=$port;dbname=$database;charset=$charset";
-
-        self::$pdo = new PDO($dsn, $username, $password, [
+        self::$pdo = new PDO('mysql:host=db;port=3306;dbname=test;charset=utf8', 'test', 'test', [
             PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'UTF8'",
         ]);
     }
